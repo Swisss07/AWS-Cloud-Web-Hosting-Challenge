@@ -1,13 +1,4 @@
-name: Deploy Website to AWS EC2
-
-on:
-  push:
-    branches: [ main ]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
+steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -21,4 +12,6 @@ jobs:
             sudo mkdir -p /var/www/html
             sudo rm -rf /var/www/html/*
             sudo cp -r * /var/www/html/
+            sudo chown -R ubuntu:ubuntu /var/www/html
+            sudo chmod -R 755 /var/www/html
             sudo systemctl restart nginx
