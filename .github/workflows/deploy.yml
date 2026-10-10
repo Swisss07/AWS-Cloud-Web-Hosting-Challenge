@@ -1,26 +1,37 @@
-name: Deploy Website to AWS EC2
+name: Deploy to EC2
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   deploy:
+    name: Deploy to EC2
     runs-on: ubuntu-latest
+    
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: Deploy to EC2 via SSH
+      - name: Copy files to EC2 via SSH
+        uses: easingthemes/ssh-deploy@main
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.HOST_DNS }}
+          REMOTE_USER: ${{ secrets.USERNAME }}
+          TARGET: ${{ secrets.TARGET_DIR }}
+          SOURCE: ""
+
+      - name: Install Apache and move files
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
+          host: ${{ secrets.HOST_DNS }}
+          username: ${{ secrets.USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            sudo mkdir -p /var/www/html
-            sudo rm -rf /var/www/html/*
-            sudo cp -r * /var/www/html/
-            sudo chown -R ubuntu:ubuntu /var/www/html
-            sudo chmod -R 755 /var/www/html
-            sudo systemctl restart nginx
+            sudo apt-get update -y
+            sudo apt-get install -y apache2
+            sudo systemctl start apache2
+            sudo systemctl enable apache2
+            sudo cp -r ${{ secrets.TARGET_DIR }}/* /var/www/html/
